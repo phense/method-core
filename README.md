@@ -61,4 +61,19 @@ python3 -m unittest discover -s tests -t . -v
 python3 scripts/validate-plugin
 ```
 
+## Host evaluations
+
+Two runners are exported to consumers. Both call a real host and cost usage; neither is part of the test suite.
+
+| Runner | What it sends | What it records |
+|---|---|---|
+| `scripts/run_host_evals.py` | A case prompt plus an instruction to select a workflow and write `decision.md`, with one plugin | The selected primary and supporting skills against `evals/<host>/expected.json` |
+| `scripts/run_natural_evals.py` | The case prompt exactly as written, with read-only tools and every plugin given by `--plugin-root` and `--with-plugin` | Which skills the host loaded on its own, over `--runs` repetitions, against `evals/natural/expected.json` |
+
+A natural case is a file `evals/natural/cases/<id>.json` with `id`, `prompt` and `files`. `evals/natural/expected.json` maps each ID to `any` (a run hits when one of these skills was loaded) and `prohibited` (a run misses when one of these was). A load is a successful skill call or a complete read of a `SKILL.md`; a skill path that only appears inside another file does not count. Write the prompt in a user's words, not in the description's vocabulary.
+
+```sh
+python3 scripts/run_natural_evals.py --host claude --native-auth --runs 3 --with-plugin ../other-method --output-dir /tmp/natural
+```
+
 Tests exercise real local Git/file operations, rollback after an injected write failure, existing state/continuity contracts, archive identity and OpenCode loader coexistence. They do not establish live model routing or provider availability. License/source metadata is retained in [third-party notices](THIRD_PARTY_NOTICES.md); original code uses the [MIT License](LICENSE).
