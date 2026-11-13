@@ -36,6 +36,21 @@ def bare(name):
     return name.rsplit(":", 1)[-1] if isinstance(name, str) else ""
 
 
+def skills_in_output(output, plugins):
+    """Skills whose complete SKILL.md is in a command's output, whatever the command looked like.
+
+    Hosts read a skill inside compound commands (`pwd; rg ...; cat <skill>`). The
+    whole file content proves the read; a path or a partial read does not.
+    """
+    found = []
+    for plugin in plugins:
+        for path in sorted((plugin / "skills").glob("*/SKILL.md")):
+            content = path.read_text().rstrip("\n")
+            if content.strip() and content in output and path.parent.name not in found:
+                found.append(path.parent.name)
+    return found
+
+
 def events(text):
     found = []
     for line in text.splitlines():
@@ -73,8 +88,7 @@ def loaded_skills(host, text, plugins):
                     and item.get("type") == "command_execution" and item.get("exit_code") == 0:
                 command, output = item.get("command"), item.get("aggregated_output", "")
                 if isinstance(command, str) and isinstance(output, str):
-                    for plugin in plugins:
-                        add(sorted(harness.observed_read_skills(command, output, plugin)))
+                    add(skills_in_output(output, plugins))
             continue
         if kind == "result":
             if event.get("is_error") or event.get("subtype") != "success":
@@ -98,8 +112,7 @@ def loaded_skills(host, text, plugins):
                     output = block["content"]
                     if isinstance(output, list):
                         output = "\n".join(str(part.get("text", "")) for part in output if isinstance(part, dict))
-                    for plugin in plugins:
-                        add(sorted(harness.observed_read_skills(str(arguments.get("command", "")), str(output), plugin)))
+                    add(skills_in_output(str(output), plugins))
     if not terminal:
         raise EvalFailure("incomplete_transcript", text)
     return order
