@@ -171,7 +171,7 @@ class MigrationConvergenceTests(unittest.TestCase):
             identifier="EM-002",
             title="EM-002: Old blocker",
             state="open",
-            labels=("engineering-method", "priority:p3", "status:open"),
+            labels=(issues.METHOD_LABEL, "priority:p3", "status:open"),
         )
         runner = MutableGitHubRunner(issues=tuple(noise + [parent, blocker]), page_size=100)
         runner.sub_issues[150] = {90_002}
@@ -199,7 +199,7 @@ class MigrationConvergenceTests(unittest.TestCase):
         self.assertEqual(by_id["EM-001"]["state"], "open")
         self.assertEqual(
             {label["name"] for label in by_id["EM-001"]["labels"]},
-            {"custom", "engineering-method", "priority:p1", "status:open"},
+            {"custom", issues.METHOD_LABEL, "priority:p1", "status:open"},
         )
         self.assertIn('Notes JSON: "Keep context"', str(by_id["EM-001"]["body"]))
         self.assertEqual(by_id["EM-002"]["state"], "closed")
@@ -209,7 +209,7 @@ class MigrationConvergenceTests(unittest.TestCase):
         self.assertEqual(
             set(runner.labels),
             {
-                "engineering-method",
+                issues.METHOD_LABEL,
                 "priority:p0",
                 "priority:p1",
                 "priority:p2",
@@ -240,21 +240,21 @@ class MigrationConvergenceTests(unittest.TestCase):
                 101,
                 identifier="EM-001",
                 title="EM-001: Desired parent",
-                labels=("engineering-method", "priority:p1", "status:open"),
+                labels=(issues.METHOD_LABEL, "priority:p1", "status:open"),
             ),
             remote_issue(
                 2,
                 102,
                 identifier="EM-001.1",
                 title="EM-001.1: Child",
-                labels=("engineering-method", "priority:p1", "status:open"),
+                labels=(issues.METHOD_LABEL, "priority:p1", "status:open"),
             ),
             remote_issue(
                 3,
                 103,
                 identifier="EM-002",
                 title="EM-002: Stale parent",
-                labels=("engineering-method", "priority:p1", "status:open"),
+                labels=(issues.METHOD_LABEL, "priority:p1", "status:open"),
             ),
         )
         runner = MutableGitHubRunner(issues=remote)
@@ -328,7 +328,7 @@ class CacheAndQueueRegressionTests(unittest.TestCase):
                 ),
                 "state": "open",
                 "labels": [
-                    {"name": "engineering-method"},
+                    {"name": issues.METHOD_LABEL},
                     {"name": "priority:p0"},
                     {"name": "status:in-progress"},
                 ],

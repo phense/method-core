@@ -6,9 +6,43 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import unittest.mock
 import zipfile
 from scripts.package_plugin import build_package
 ROOT=Path(__file__).resolve().parents[1]
+import engineering_method.issues as issues
+from engineering_method.gh import RemoteIssue
+from engineering_method.models import BacklogItem, Priority, TaskStatus
+
+class MethodLabelTests(unittest.TestCase):
+    """Managed Issues carry the label of the method that owns the backlog."""
+    def identity(self, content):
+        root=Path(tempfile.mkdtemp());self.addCleanup(shutil.rmtree,root)
+        if content is not None:(root/'method.json').write_text(content)
+        return root
+    def test_label_comes_from_the_bundling_method_identity(self):
+        # A hard-coded name labels a Writing Method backlog as engineering-method.
+        self.assertEqual('writing-method',issues.method_label(self.identity(json.dumps({'name':'writing-method'}))))
+        self.assertEqual('engineering-method',issues.method_label(self.identity(json.dumps({'name':'engineering-method'}))))
+    def test_missing_or_unusable_identity_keeps_the_historical_label(self):
+        for content in [None,'not json',json.dumps({}),json.dumps({'name':'Bad Name; rm'}),json.dumps({'name':7})]:
+            self.assertEqual('engineering-method',issues.method_label(self.identity(content)))
+    def test_installed_identity_matches_this_checkout(self):
+        manifest=ROOT/'method.json'
+        expected=json.loads(manifest.read_text())['name'] if manifest.is_file() else 'engineering-method'
+        self.assertEqual(expected,issues.METHOD_LABEL)
+        self.assertEqual(issues.METHOD_LABEL,issues.CONTROLLED_LABELS[0][0])
+    def test_descriptions_name_the_method(self):
+        labels={name:description for name,_,description in issues.controlled_labels('writing-method')}
+        self.assertEqual("Managed by Peter's Writing Method.",labels['writing-method'])
+        self.assertEqual('Open Writing Method work.',labels['status:open'])
+        self.assertNotIn('engineering-method',labels)
+    def test_issue_labelled_under_the_historical_name_is_relabelled(self):
+        item=BacklogItem(id='WM-001',title='Video',status=TaskStatus.IN_PROGRESS,priority=Priority.P1,parent_id=None,depends_on=(),notes='',updated_at='2026-11-13T00:00:00Z')
+        remote=RemoteIssue(id=1,number=1,title='WM-001: Video',body='',state='open',labels=('engineering-method','priority:p1','status:open','custom'),updated_at='2026-11-13T00:00:00Z')
+        with unittest.mock.patch.object(issues,'METHOD_LABEL','writing-method'):
+            desired=issues._desired_remote_labels(item,remote)
+        self.assertEqual(('custom','writing-method','priority:p1','status:in-progress'),desired)
 
 class MethodIdentityTests(unittest.TestCase):
     def test_writing_archive_uses_committed_manifest_identity(self):
