@@ -12,7 +12,8 @@ ROOT = Path(__file__).resolve().parents[1]
 class CoreSyncTests(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory(prefix='method-sync-');self.addCleanup(self.tmp.cleanup)
-        self.base = Path(self.tmp.name);self.source = self.base/'source';self.source.mkdir()
+        # macOS temp roots sit below the /var symlink; the lock check refuses symlinked ancestors.
+        self.base = Path(self.tmp.name).resolve();self.source = self.base/'source';self.source.mkdir()
         self.target = self.base/'target';self.target.mkdir()
         subprocess.run(['git','init','-q','-b','main',str(self.source)],check=True)
         for key,value in [('user.name','Sync Test'),('user.email','sync@example.invalid')]: self.git('config',key,value)

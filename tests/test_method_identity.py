@@ -61,7 +61,8 @@ class MethodIdentityTests(unittest.TestCase):
     def test_both_opencode_loaders_coexist_and_uninstall_is_scoped(self):
         # A fixed loader filename must not overwrite or block the second method.
         with tempfile.TemporaryDirectory() as directory:
-            base=Path(directory);config=base/'config'
+            # Resolve first: the installer refuses symlinked parents such as macOS /var.
+            base=Path(directory).resolve();config=base/'config'
             for name in ['engineering-method','writing-method']:
                 source=base/name
                 for folder in ['integrations/opencode','shared/platform','skills','.codex-plugin']:
