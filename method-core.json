@@ -71,6 +71,7 @@
     "tests/test_opencode_integration.py",
     "tests/test_packaging.py",
     "tests/test_platform_adapters.py",
+    "tests/test_skill_authoring.py",
     "third-party/core-sources.lock.json"
   ]
 }
