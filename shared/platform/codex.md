@@ -4,6 +4,14 @@ Shared Method Core host mapping. Shared skills keep semantic names;
 resolve those names against this adapter when executing in Codex. Both host
 manifests expose the same plugin-root `skills/` tree.
 
+## Contents
+
+- Host mapping (the JSON block below)
+- Capability resolution
+- Isolation and continuity
+- Verified CLI interfaces
+- Method integration
+
 ```json
 {
   "host": "codex",

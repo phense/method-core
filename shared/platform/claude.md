@@ -4,6 +4,14 @@ Shared Method Core host mapping. Shared skills keep semantic names;
 resolve them against this adapter in Claude Code. The conventional plugin-root
 `skills/` directory is the same tree exposed by the Codex manifest.
 
+## Contents
+
+- Host mapping (the JSON block below)
+- Capability resolution
+- Isolation and continuity
+- Verified CLI interfaces
+- Method integration
+
 ```json
 {
   "host": "claude",
