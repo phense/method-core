@@ -82,10 +82,13 @@ Verified with `claude --help`, `claude plugin validate --help`, `claude plugin
 marketplace add --help`, and `claude plugin install --help` at the stated
 version. Commands describe interfaces, not completed live validation.
 
+Set `method_name` to the installed consumer identity from
+`.codex-plugin/plugin.json` (`engineering-method` or `writing-method`).
+
 ```sh
 env CLAUDE_CONFIG_DIR="$em_claude_home" claude plugin validate "$em_package" --strict --json
 env CLAUDE_CONFIG_DIR="$em_claude_home" claude plugin marketplace add "$em_package"
-env CLAUDE_CONFIG_DIR="$em_claude_home" claude plugin install engineering-method@engineering-method
+env CLAUDE_CONFIG_DIR="$em_claude_home" claude plugin install "${method_name}@${method_name}"
 env CLAUDE_CONFIG_DIR="$em_claude_home" claude -p --plugin-dir "$em_package" --output-format stream-json --verbose --no-session-persistence --setting-sources "" --strict-mcp-config --permission-mode dontAsk --permission-prompts none --model fable --effort medium --max-budget-usd 1
 ```
 

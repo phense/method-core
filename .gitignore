@@ -7,3 +7,8 @@ __pycache__/
 htmlcov/
 /dist/
 /release-evidence/
+
+.method-core-sync.lock
+.method-core-transaction/
+.method-core-stage-*/
+.method-core-retired-*/

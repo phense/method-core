@@ -9,14 +9,17 @@ Apply the shared [proportionality rule](../../shared/policies/proportionality.md
 before adding work, delegating, or repeating verification.
 
 Treat feedback as a technical hypothesis. Understand it, verify against current
-code and governing requirements, then act on evidence.
+artifacts and governing requirements, then act on evidence.
 
 This workflow remains primary while checking an incoming allegation, even when
 that check runs code or tests. If the allegation is disproved, record the evidence
-and reject it without entering a debugging lifecycle. Transfer to
-`systematic-debugging` only for a confirmed failure whose cause still needs
-diagnosis; the review finding retains its identity and returns here for its
-final disposition after diagnosis and repair.
+and reject it without entering another lifecycle. For a confirmed failure in code
+whose cause needs diagnosis, the owning engineering method may use its
+`systematic-debugging` skill when available. That is an optional companion
+capability, not a dependency of shared review handling. For writing feedback,
+check the document, sources, terminology and acceptance criteria directly.
+Missing evidence remains unresolved; never invent a cause. The finding keeps
+its identity and returns here for final disposition after repair.
 
 ## Evaluate first
 
@@ -42,9 +45,12 @@ Work one finding at a time in impact and dependency order:
 2. Important requirement, architecture, interface, and test gaps.
 3. Accepted Minor improvements within current scope.
 
-For behavior changes, use `test-driven-development` and observe a meaningful
-failure before the fix. Run the narrow affected checks after each correction,
-then use `verification-before-completion` before claiming the finding resolved.
+For code behavior changes, require meaningful regression evidence and the
+owning engineering method's test-first process; its `test-driven-development`
+skill is optional companion support. For document corrections, verify facts,
+links, terminology and the affected acceptance criteria; do not require a code
+test for prose. Run the narrow affected checks after each correction, then use
+the bundled `verification-before-completion` before claiming resolution.
 Re-review when a correction changes an interface or integration boundary.
 
 ## Completion

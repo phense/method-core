@@ -81,10 +81,13 @@ Verified locally with `codex exec --help`, `codex plugin marketplace add
 The following are command shapes, not claims of successful live evaluation.
 Variables denote absolute paths supplied by the caller.
 
+Set `method_name` to the installed consumer identity from
+`.codex-plugin/plugin.json` (`engineering-method` or `writing-method`).
+
 ```sh
 env CODEX_HOME="$em_codex_home" codex plugin marketplace add "$em_package" --json
-env CODEX_HOME="$em_codex_home" codex plugin add engineering-method@engineering-method --json
-env CODEX_HOME="$em_codex_home" codex plugin list --marketplace engineering-method --json
+env CODEX_HOME="$em_codex_home" codex plugin add "${method_name}@${method_name}" --json
+env CODEX_HOME="$em_codex_home" codex plugin list --marketplace "$method_name" --json
 env CODEX_HOME="$em_codex_home" codex exec -C "$em_fixture" --ephemeral --json --sandbox workspace-write -m gpt-6-astra -c 'model_reasoning_effort="medium"' -o "$em_output/final.txt" -
 ```
 
