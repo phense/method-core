@@ -68,6 +68,9 @@ class LoadedSkillTests(unittest.TestCase):
         path = ".agents/skills/alpha-skill/SKILL.md"
         complete = lines(command(f"/bin/zsh -lc 'cat {path}'", self.content), {"type": "turn.completed"})
         self.assertEqual(["alpha-skill"], natural.loaded_skills("codex", complete, [self.plugin]))
+        compound = lines(command(f"/bin/zsh -lc 'pwd; rg --files -g AGENTS.md; cat {path}'", "/repo\n" + self.content),
+                         {"type": "turn.completed"})
+        self.assertEqual(["alpha-skill"], natural.loaded_skills("codex", compound, [self.plugin]))
         listing = lines(command("/bin/zsh -lc 'rg --files .agents/skills'", path + "\n"),
                         command(f"/bin/zsh -lc 'cat {path}'", self.content, code=1),
                         command(f"/bin/zsh -lc 'head -2 {path}'", "---\nname: alpha-skill\n"),
