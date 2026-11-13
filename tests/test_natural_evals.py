@@ -82,6 +82,11 @@ class LoadedSkillTests(unittest.TestCase):
         with self.assertRaisesRegex(harness.EvalFailure, "malformed_jsonl"):
             natural.loaded_skills("claude", "{not json", [self.plugin])
 
+    def test_claude_counts_a_complete_shell_read(self):
+        path = str(self.plugin / "skills/alpha-skill/SKILL.md")
+        text = lines(*claude_call("a", "Bash", {"command": f"cat {path}"}, content=self.content), DONE)
+        self.assertEqual(["alpha-skill"], natural.loaded_skills("claude", text, [self.plugin]))
+
     def test_judgement(self):
         expected = {"any": ["a", "b"], "prohibited": ["z"]}
         self.assertTrue(natural.judge(["b", "other"], expected))
@@ -110,25 +115,38 @@ class CommandTests(unittest.TestCase):
             self.assertEqual("Plain request.", command[-1])
             self.assertEqual("read-only", command[command.index("--sandbox") + 1])
             self.assertNotIn("--output-schema", command)
+            # The plugins load as installed, so the user's configuration stays in effect.
+            self.assertNotIn("--ignore-user-config", command)
             self.assertEqual("/auth", env["CODEX_HOME"])
         for instruction in (harness.ROUTING_INSTRUCTION, harness.SKILL_DISCOVERY_INSTRUCTION):
             self.assertNotIn(instruction.strip()[:40], " ".join(command))
 
-    def test_codex_repository_links_each_skill_name_once(self):
+    def test_repository_holds_the_fixture_and_no_skill_links(self):
         with tempfile.TemporaryDirectory() as directory:
             base = Path(directory)
-            for plugin, names in (("one", ["shared", "first"]), ("two", ["shared", "second"])):
-                for name in names:
-                    (base / plugin / "skills" / name).mkdir(parents=True)
-                    (base / plugin / "skills" / name / "SKILL.md").write_text(plugin)
-            natural.prepare_repo(base / "repo", {"files": {"docs/a.md": "x"}}, [base / "one", base / "two"], "codex")
-            skills = base / "repo/.agents/skills"
-            self.assertEqual({"shared", "first", "second"}, {path.name for path in skills.iterdir()})
-            self.assertEqual("one", (skills / "shared/SKILL.md").read_text())
-            natural.prepare_repo(base / "repo2", {"files": {}}, [base / "one"], "claude")
-            self.assertFalse((base / "repo2/.agents").exists())
+            natural.prepare_repo(base / "repo", {"files": {"docs/a.md": "x"}})
+            self.assertEqual("x", (base / "repo/docs/a.md").read_text())
+            self.assertFalse((base / "repo/.agents").exists())
             with self.assertRaisesRegex(harness.EvalFailure, "fixture_path_escape"):
-                natural.prepare_repo(base / "repo3", {"files": {"../out.md": "x"}}, [base / "one"], "claude")
+                natural.prepare_repo(base / "repo3", {"files": {"../out.md": "x"}})
+
+    def test_codex_uses_the_installed_copy_only_when_its_skills_equal_the_source(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            source, home = base / "source", base / "home"
+            (source / "skills/alpha").mkdir(parents=True)
+            (source / "skills/alpha/SKILL.md").write_text("current")
+            (source / ".codex-plugin").mkdir()
+            (source / ".codex-plugin/plugin.json").write_text(json.dumps({"name": "demo"}))
+            with self.assertRaisesRegex(harness.EvalFailure, "plugin_not_installed:demo"):
+                natural.installed_codex_plugins([source], home)
+            installed = home / "plugins/cache/market/demo/1.0.0"
+            (installed / "skills/alpha").mkdir(parents=True)
+            (installed / "skills/alpha/SKILL.md").write_text("older")
+            with self.assertRaisesRegex(harness.EvalFailure, "installed_plugin_differs:demo"):
+                natural.installed_codex_plugins([source], home)
+            (installed / "skills/alpha/SKILL.md").write_text("current")
+            self.assertEqual([installed], natural.installed_codex_plugins([source], home))
 
 
 class RunTests(unittest.TestCase):

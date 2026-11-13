@@ -5,6 +5,10 @@ The routing harness tells a host to select a workflow. This one sends the case
 prompt exactly as written, with every given plugin loaded, and records which
 skills the host loaded on its own. Expectations never enter prompts. A case is
 repeated `--runs` times and reported as a count, because loading is statistical.
+
+The host runs as its user runs it: with the adapter's coordinator model, and on
+Codex with the plugins as they are installed in the given Codex home. An
+installed copy whose skills differ from the source stops the run.
 """
 from __future__ import annotations
 import argparse
@@ -90,6 +94,12 @@ def loaded_skills(host, text, plugins):
                     add([bare(arguments.get("skill"))])
                 if call.get("name") == "Read":
                     add(harness.SKILL_PATH.findall(str(arguments.get("file_path", ""))))
+                if call.get("name") == "Bash":
+                    output = block["content"]
+                    if isinstance(output, list):
+                        output = "\n".join(str(part.get("text", "")) for part in output if isinstance(part, dict))
+                    for plugin in plugins:
+                        add(sorted(harness.observed_read_skills(str(arguments.get("command", "")), str(output), plugin)))
     if not terminal:
         raise EvalFailure("incomplete_transcript", text)
     return order
@@ -103,7 +113,31 @@ def judge(loaded, expected):
     return bool(set(loaded) & set(wanted)) if wanted else not loaded
 
 
-def prepare_repo(repo, case, plugins, host):
+def skills_fingerprint(plugin):
+    """Content of every skill file of a plugin, independent of where the plugin lies."""
+    return harness.fingerprint(plugin / "skills")
+
+
+def plugin_name(plugin):
+    manifest = plugin / ".codex-plugin/plugin.json"
+    return json.loads(manifest.read_text())["name"] if manifest.is_file() else plugin.name
+
+
+def installed_codex_plugins(sources, codex_home):
+    """The installed copy of each source plugin; its skills must equal the source."""
+    found = []
+    for source in sources:
+        name, wanted = plugin_name(source), skills_fingerprint(source)
+        copies = [path for path in sorted((codex_home / "plugins/cache").glob(f"*/{name}/*"))
+                  if (path / "skills").is_dir()]
+        match = [path for path in copies if skills_fingerprint(path) == wanted]
+        if not match:
+            raise EvalFailure(("installed_plugin_differs:" if copies else "plugin_not_installed:") + name)
+        found.append(match[-1])
+    return found
+
+
+def prepare_repo(repo, case):
     repo.mkdir()
     subprocess.run(["git", "init", "-q", str(repo)], check=True, capture_output=True)
     for relative, content in case.get("files", {}).items():
@@ -112,14 +146,6 @@ def prepare_repo(repo, case, plugins, host):
             raise EvalFailure("fixture_path_escape")
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(content)
-    if host == "codex":
-        # Codex discovers repository skills here; a name two plugins share is linked once.
-        skills = repo / ".agents/skills"
-        skills.mkdir(parents=True)
-        for plugin in plugins:
-            for path in sorted((plugin / "skills").iterdir()):
-                if path.is_dir() and not (skills / path.name).exists():
-                    (skills / path.name).symlink_to(path.resolve(), target_is_directory=True)
 
 
 def host_command(host, repo, plugins, config, model, effort, prompt, auth_home=None, native_auth=False, budget=2):
@@ -127,8 +153,9 @@ def host_command(host, repo, plugins, config, model, effort, prompt, auth_home=N
     for key in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "CLAUDECODE", "ANTHROPIC_AUTH_TOKEN"):
         env.pop(key, None)
     if host == "codex":
-        env["CODEX_HOME"] = str(auth_home or config)
-        command = ["codex", "exec", "--json", "--ephemeral", "--ignore-user-config",
+        # The user's own Codex home: plugins load the way they are installed, not through repository links.
+        env["CODEX_HOME"] = str(auth_home)
+        command = ["codex", "exec", "--json", "--ephemeral",
                    "--sandbox", "read-only", "-C", str(repo), "-m", model]
         if effort is not None:
             command.extend(["-c", f'model_reasoning_effort="{effort}"'])
@@ -155,12 +182,16 @@ def run_once(host, case, output, label, timeout, sources, auth_home=None, model=
         temporary = Path(directory)
         repo, config = temporary / "repo", temporary / "config"
         config.mkdir()
-        staged = [harness.stage_plugin(source, temporary / f"plugin-{index}")
-                  for index, source in enumerate(sources)]
-        prepare_repo(repo, case, staged, host)
-        policy = harness.model_policy(host, sources[0])
-        model = model or policy["roles"][policy["evaluation_roles"]["routing"]][0]["model"]
-        effort = harness.model_effort(host, model, sources[0])
+        if host == "codex":
+            staged = installed_codex_plugins(sources, Path(auth_home))
+        else:
+            staged = [harness.stage_plugin(source, temporary / f"plugin-{index}")
+                      for index, source in enumerate(sources)]
+        prepare_repo(repo, case)
+        coordinator = harness.model_policy(host, sources[0])["coordinator"]
+        effort = coordinator["effort"] if model in (None, coordinator["model"]) \
+            else harness.model_effort(host, model, sources[0])
+        model = model or coordinator["model"]
         command, env = host_command(host, repo, staged, config, model, effort, case["prompt"],
                                     auth_home, native_auth)
         stdout = ""
@@ -208,7 +239,7 @@ def main(argv=None):
     auth.add_argument("--auth-home", type=Path)
     auth.add_argument("--native-auth", action="store_true",
                       help="Claude only: preserve the calling terminal native authentication environment")
-    parser.add_argument("--model")
+    parser.add_argument("--model", help="default: the coordinator model of the host adapter")
     parser.add_argument("--plugin-root", type=Path, default=ROOT,
                         help="plugin whose evals/natural cases are run")
     parser.add_argument("--with-plugin", type=Path, action="append", default=[],
@@ -216,6 +247,8 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.native_auth and args.host != "claude":
         parser.error("--native-auth is supported only for Claude")
+    if args.host == "codex" and args.auth_home is None:
+        parser.error("Codex needs --auth-home: the Codex home in which the plugins are installed")
     if args.runs < 1:
         parser.error("--runs must be at least 1")
     min_hits = args.runs if args.min_hits is None else args.min_hits
@@ -236,6 +269,11 @@ def main(argv=None):
     if not cases or not expected_file.is_file():
         parser.error("no natural evaluation cases selected")
     expected = json.loads(expected_file.read_text())
+    if args.host == "codex":
+        try:
+            installed_codex_plugins(sources, args.auth_home)
+        except EvalFailure as exc:
+            parser.error(f"{exc}: reinstall the plugin in that Codex home, then run again")
     output.mkdir(parents=True, exist_ok=True)
     os.chmod(output, 0o700)
     results = []
