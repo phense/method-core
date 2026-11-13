@@ -67,6 +67,13 @@ class CoreSyncTests(unittest.TestCase):
         self.assertNotEqual(0,self.sync('--source-root',str(self.source)).returncode)
         (self.target/'method-core.lock.json').write_text('{"files": []}')
         self.assertNotEqual(0,self.sync('--check').returncode)
+    def test_umask_dependent_permission_bits_are_not_mode_drift(self):
+        # A host umask of 0002 installs 664/775 copies; only the executable bit is recorded by Git.
+        self.install()
+        (self.target/'shared/platform/codex.md').chmod(0o664);(self.target/'scripts/project-state').chmod(0o775)
+        r=self.sync('--check');self.assertEqual(0,r.returncode,r.stdout+r.stderr)
+        (self.target/'shared/platform/codex.md').chmod(0o755)
+        self.assertNotEqual(0,self.sync('--check').returncode)
     def test_update_adds_and_removes_only_owned_exports(self):
         self.install();self.put('new.txt',b'new');self.manifest(['new.txt','scripts/project-state']);self.commit();self.install()
         self.assertFalse((self.target/'shared/platform/codex.md').exists());self.assertEqual(b'new',(self.target/'new.txt').read_bytes())
