@@ -53,6 +53,8 @@
     "templates/playbooks/review.md",
     "tests/__init__.py",
     "tests/fakes.py",
+    "tests/fixtures/legacy-project/BACKLOG.md",
+    "tests/fixtures/legacy-project/FEATURES.md",
     "tests/test_backlog.py",
     "tests/test_clean_install.py",
     "tests/test_cli.py",

@@ -83,7 +83,7 @@ class BacklogRenderingTests(unittest.TestCase):
         self.assertEqual(loaded.items[1].parent_id, "EM-001")
 
     def test_loads_the_existing_backlog_without_changing_its_stable_ids_or_meanings(self) -> None:
-        root = Path(__file__).resolve().parents[1]
+        root = Path(__file__).resolve().parent / "fixtures/legacy-project"
         legacy = load_backlog(root / "BACKLOG.md")
         with tempfile.TemporaryDirectory() as temporary:
             rendered_path = Path(temporary) / "BACKLOG.md"

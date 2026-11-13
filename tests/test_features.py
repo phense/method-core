@@ -130,7 +130,7 @@ class FeatureInventoryTests(unittest.TestCase):
                 load_features(path)
 
     def test_rejects_visible_feature_in_a_pre_release_document_without_any_marker(self) -> None:
-        root = Path(__file__).resolve().parents[1]
+        root = Path(__file__).resolve().parent / "fixtures/legacy-project"
         content = (root / "FEATURES.md").read_text(encoding="utf-8")
         content += "\n## `F-999` Unmarked\n\n- Status: available\n- Summary: Hidden.\n"
         with tempfile.TemporaryDirectory() as temporary:
@@ -155,7 +155,7 @@ class FeatureInventoryTests(unittest.TestCase):
             FeatureDocument(features=(feature(), feature()))
 
     def test_current_inventory_records_verified_capabilities(self) -> None:
-        root = Path(__file__).resolve().parents[1]
+        root = Path(__file__).resolve().parent / "fixtures/legacy-project"
         inventory = load_features(root / "FEATURES.md")
         backlog = {item.id: item for item in load_backlog(root / "BACKLOG.md").items}
         self.assertTrue({"F-001", "F-002", "F-003", "F-004"}.issubset(
