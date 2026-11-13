@@ -1,0 +1,9 @@
+.worktrees/
+/.engineering-method/
+.venv/
+__pycache__/
+*.py[cod]
+.coverage
+htmlcov/
+/dist/
+/release-evidence/

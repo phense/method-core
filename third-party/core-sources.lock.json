@@ -1,0 +1,217 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "superpowers",
+      "project": "Superpowers",
+      "repository": "https://github.com/obra/superpowers.git",
+      "revision": "b36e0829c6d0140e93cfef2ca599b1b07d4a7797",
+      "license": {
+        "spdx": "MIT",
+        "source_path": "LICENSE",
+        "sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400"
+      },
+      "copyright": "Copyright (c) 2025 Jesse Vincent",
+      "modification_summary": "Curated quality practices and adapted report, brief, review and recovery mechanics for cohesive slices, proportional review and protected project-state storage.",
+      "files": [
+        {
+          "source_path": "LICENSE",
+          "destination_path": "THIRD_PARTY_NOTICES.md",
+          "source_sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
+          "modification_status": "notice-only"
+        },
+        {
+          "source_path": "skills/verification-before-completion/SKILL.md",
+          "destination_path": "skills/verification-before-completion/SKILL.md",
+          "source_sha256": "2befe7fc55bcadaa3d97dd9e8efeb633d2561c0ebe74c5a8b17c4d9e7e4520b3",
+          "destination_sha256": "faaf2467dbfc9d10d280d1891762ba8e3da6e2220c77f870fdc1ef0347901fa7",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/requesting-code-review/SKILL.md",
+          "destination_path": "skills/requesting-code-review/SKILL.md",
+          "source_sha256": "d71cc01ba56d2325cf8af5f7c11837819b63ecd57de0bfdb812f7f3ff7751df8",
+          "destination_sha256": "197f746dcb6d5bf10e9e65c532c9b39a042e9daa7184fc27f2fafab848901c25",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/requesting-code-review/code-reviewer.md",
+          "destination_path": "skills/requesting-code-review/code-reviewer.md",
+          "source_sha256": "5eca5fcfd48a50e0a526ce5ffd64bf625d6b81bb46d11795274dae451fe6ffd4",
+          "destination_sha256": "1ccb035bef48a862682a7e34557447b04d3b86992c78519b10b2a4bd77f625f2",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/receiving-code-review/SKILL.md",
+          "destination_path": "skills/receiving-code-review/SKILL.md",
+          "source_sha256": "091df1629510af1b92fc4abd6f96732ebedb4cb2c0f3457e8f2740b0504a2438",
+          "destination_sha256": "9343de65efbe0c1b4442da8bc5001dedb5a09768a73a0d952f206bbec82576a2",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/using-git-worktrees/SKILL.md",
+          "destination_path": "skills/using-git-worktrees/SKILL.md",
+          "source_sha256": "8cfb86f121269e8f7f12361e6795c4f6738828340e28964c9229d365666c9edd",
+          "destination_sha256": "c913860e385c45657b006097128523cfebafdf7a29c710e4755710d7c606494a",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/dispatching-parallel-agents/SKILL.md",
+          "destination_path": "skills/dispatching-parallel-agents/SKILL.md",
+          "source_sha256": "1968923066f3b707eb01d1992cdf4c42284c3855f70253b9cd5000ff45fca13c",
+          "destination_sha256": "340659cce89cc6d8dad13f754f1ebe2523460d75fde4e7c998020ea2ebba37d4",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/subagent-driven-development/implementer-prompt.md",
+          "destination_path": "templates/orchestration/agent-report.md",
+          "source_sha256": "81dd9d5a3fb0b09b96b5829f03b9796842f3199ef7591d1ba1c2db2a515f64d0",
+          "destination_sha256": "5f69bede77238ecfdacda598c86842478f0a51e4c2b444f292df0da08d088e73",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/subagent-driven-development/task-reviewer-prompt.md",
+          "destination_path": "shared/agent-roles/reviewer.md",
+          "source_sha256": "eea23e33ec570c3041f40e9569fa711d61b8029f9eecf908345138aa1c6e61ab",
+          "destination_sha256": "8ed94cc55adc7ebbcad64c88496a9ef945e63e01cd920a390a5400c1ad6f4825",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/subagent-driven-development/re-review-prompt.md",
+          "destination_path": "templates/orchestration/review-report.md",
+          "source_sha256": "db0d5849478bc79cbde97b9b2cf0e58b50be8b8ed18464b0252c2bf27b6440a6",
+          "destination_sha256": "f2dc75b25feaec24e865f79db2e510f3ce98948bfdce506655fb1eec2cfb941d",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/subagent-driven-development/scripts/sdd-workspace",
+          "destination_path": "shared/policies/continuity-contract.md",
+          "source_sha256": "95a09d9d3983ad1aafd093ca72b4587946dea885c6e302caa02a779a2f911c31",
+          "destination_sha256": "81c8162402096840f5ed5ac34a4fed4c21a155ba4a2a526e91ba507a726c1641",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/subagent-driven-development/scripts/sdd-workspace",
+          "destination_path": "templates/orchestration/resume.md",
+          "source_sha256": "95a09d9d3983ad1aafd093ca72b4587946dea885c6e302caa02a779a2f911c31",
+          "destination_sha256": "38c5b475852386d303c3c73108bec28b034ddeac781499bd197c383b5e170094",
+          "modification_status": "adapted"
+        }
+      ]
+    },
+    {
+      "id": "sre-runbook-agent-skills",
+      "project": "sre-runbook-agent-skills",
+      "repository": "https://github.com/medzin/sre-runbook-agent-skills.git",
+      "revision": "44ab3d87293788036013098868563f82a3369b81",
+      "license": {
+        "spdx": "MIT",
+        "source_path": "LICENSE",
+        "sha256": "f114aa5869612318e5c35fb10175e322e1feec5039bddf321a1822edf2737cf6"
+      },
+      "copyright": "Copyright (c) 2026 Adam Medzi\u0144ski",
+      "modification_summary": "Adapted selected playbook authoring/review and evidence rules for development and system deliverables, conditional lifecycle support and existing authority; removed incident-only and host-specific requirements.",
+      "files": [
+        {
+          "source_path": "LICENSE",
+          "destination_path": "THIRD_PARTY_NOTICES.md",
+          "source_sha256": "f114aa5869612318e5c35fb10175e322e1feec5039bddf321a1822edf2737cf6",
+          "modification_status": "notice-only"
+        },
+        {
+          "source_path": "skills/sre-runbook-author/SKILL.md",
+          "destination_path": "skills/playbook-authoring/SKILL.md",
+          "source_sha256": "a7c06fd658dccc671cae685a4823b82a21e1575f85ec1e0f844c7b6b9458f25c",
+          "destination_sha256": "9ac4be7b74cd19978c4d82eee0f092666ea6792fd18a88be36f370c972d639e8",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/sre-runbook-author/references/runbook-template.md",
+          "destination_path": "templates/playbooks/playbook.md",
+          "source_sha256": "b9ed541c36f1f0590f074c7238380c77959cec4ec7aed0207cf31f8539a69122",
+          "destination_sha256": "61c414cd9a6bc95fce20945c706e2db7cb2af0b9bd8afae139963cfb3df59ebb",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/sre-runbook-reviewer/SKILL.md",
+          "destination_path": "skills/playbook-review/SKILL.md",
+          "source_sha256": "7385abc84b1db7b8ba9fa90e65d820f6986d262893ad42773fd4ff5a25c717ca",
+          "destination_sha256": "a784e7986fce41b19a4220e7c98356fd9c23b71504fb4ada9ccbce519290ecd9",
+          "modification_status": "adapted"
+        },
+        {
+          "source_path": "skills/sre-runbook-reviewer/references/review-scorecard.md",
+          "destination_path": "templates/playbooks/review.md",
+          "source_sha256": "356c3135e482ad69e082e32571422e36408bcbfa430707eca60a2d4abcc70c52",
+          "destination_sha256": "55eac867e0d8014de46075b113f3b51ead2debadff02cf820bf93b54f7c541c9",
+          "modification_status": "adapted"
+        }
+      ]
+    },
+    {
+      "id": "han",
+      "project": "han",
+      "repository": "https://github.com/testdouble/han.git",
+      "revision": "19cb21bcb1154d29bf20d1f3c9ad4854a59580d2",
+      "license": {
+        "spdx": "MIT",
+        "source_path": "LICENSE",
+        "sha256": "9940ab927f654e997d00aedc6a8734be0600f9443377697419ee7ed4247f2d36"
+      },
+      "copyright": "Copyright 2026 Test Double, Inc.",
+      "modification_summary": "Adapted selected playbook authoring/review and evidence rules for development and system deliverables, conditional lifecycle support and existing authority; removed incident-only and host-specific requirements.",
+      "files": [
+        {
+          "source_path": "LICENSE",
+          "destination_path": "THIRD_PARTY_NOTICES.md",
+          "source_sha256": "9940ab927f654e997d00aedc6a8734be0600f9443377697419ee7ed4247f2d36",
+          "modification_status": "notice-only"
+        },
+        {
+          "source_path": "han-documentation/skills/runbook/SKILL.md",
+          "destination_path": "shared/policies/playbooks.md",
+          "source_sha256": "1fd29933594a19177a60c77c98ae7cf776220aa67b5f11ae70d2851fc63eee37",
+          "destination_sha256": "a08a4344863f8dcd682c822b0164a6102042ce3e844b72bd417ff03e0ae0390d",
+          "modification_status": "adapted"
+        }
+      ]
+    }
+  ],
+  "original": {
+    "copyright": "Copyright (c) 2026 Peter Hense",
+    "license": "MIT",
+    "modification_status": "original",
+    "paths": [
+      "engineering_method/**",
+      "shared/platform/**",
+      "templates/uml/**",
+      "tests/**",
+      "evals/**",
+      "skills/architecture-modeling/SKILL.md",
+      "skills/project-backlog/SKILL.md",
+      "shared/agent-roles/system-architect.md",
+      "shared/agent-roles/debugger.md",
+      "shared/policies/architecture-gate.md",
+      "shared/policies/defect-convergence.md",
+      "shared/policies/model-routing.md",
+      "shared/policies/orchestration.md",
+      "shared/policies/lifecycle-handoffs.md",
+      "templates/openspec/escalation.md",
+      "shared/policies/proportionality.md",
+      "skills/documentation-planning/SKILL.md",
+      "skills/documentation-authoring/SKILL.md",
+      "skills/documentation-review/SKILL.md",
+      "skills/explaining-concepts/SKILL.md",
+      "skills/writing-procedures/SKILL.md",
+      "skills/empathic-troubleshooting/SKILL.md",
+      "skills/terminology-guard/SKILL.md",
+      "skills/visual-placeholders/SKILL.md",
+      "shared/policies/writing-depth.md",
+      "shared/policies/reader-oriented-output.md",
+      "shared/writing/**",
+      "templates/documentation/**",
+      "skills/documentation-pdf/SKILL.md"
+    ],
+    "scope": "These paths are original implementation. All adapted destinations are enumerated separately in sources; no upstream runtime is bundled."
+  }
+}
