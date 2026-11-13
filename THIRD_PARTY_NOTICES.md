@@ -1,5 +1,7 @@
 # Third-Party Notices
 
+This plugin adapts only the files listed below. Immutable source hashes and current destination hashes are recorded in the corresponding source lock.
+
 ## Original implementation
 
 Copyright (c) 2026 Peter Hense. Original code is MIT licensed. Core preserves adapted source attribution below; it owns only the explicitly exported shared files.
@@ -9,6 +11,10 @@ Copyright (c) 2026 Peter Hense. Original code is MIT licensed. Core preserves ad
 Repository: https://github.com/obra/superpowers.git
 
 Revision: `b36e0829c6d0140e93cfef2ca599b1b07d4a7797`
+
+License SHA-256: `a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400`
+
+`LICENSE -> THIRD_PARTY_NOTICES.md: notice-only`
 
 Copyright (c) 2025 Jesse Vincent
 
@@ -54,6 +60,10 @@ Repository: https://github.com/medzin/sre-runbook-agent-skills.git
 
 Revision: `44ab3d87293788036013098868563f82a3369b81`
 
+License SHA-256: `f114aa5869612318e5c35fb10175e322e1feec5039bddf321a1822edf2737cf6`
+
+`LICENSE -> THIRD_PARTY_NOTICES.md: notice-only`
+
 Copyright (c) 2026 Adam Medziński
 
 Adapted selected playbook authoring/review and evidence rules for development and system deliverables, conditional lifecycle support and existing authority; removed incident-only and host-specific requirements.
@@ -91,6 +101,10 @@ SOFTWARE.
 Repository: https://github.com/testdouble/han.git
 
 Revision: `19cb21bcb1154d29bf20d1f3c9ad4854a59580d2`
+
+License SHA-256: `9940ab927f654e997d00aedc6a8734be0600f9443377697419ee7ed4247f2d36`
+
+`LICENSE -> THIRD_PARTY_NOTICES.md: notice-only`
 
 Copyright 2026 Test Double, Inc.
 

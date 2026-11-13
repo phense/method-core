@@ -16,7 +16,7 @@
       "files": [
         {
           "source_path": "LICENSE",
-          "destination_path": "THIRD_PARTY_NOTICES.md",
+          "destination_path": "CORE_NOTICES.md",
           "source_sha256": "a37e0e9697144819e1d965176ac4ae5bc3fa02d11e7812036bbcadf6dafe2400",
           "modification_status": "notice-only"
         },
@@ -114,7 +114,7 @@
       "files": [
         {
           "source_path": "LICENSE",
-          "destination_path": "THIRD_PARTY_NOTICES.md",
+          "destination_path": "CORE_NOTICES.md",
           "source_sha256": "f114aa5869612318e5c35fb10175e322e1feec5039bddf321a1822edf2737cf6",
           "modification_status": "notice-only"
         },
@@ -163,7 +163,7 @@
       "files": [
         {
           "source_path": "LICENSE",
-          "destination_path": "THIRD_PARTY_NOTICES.md",
+          "destination_path": "CORE_NOTICES.md",
           "source_sha256": "9940ab927f654e997d00aedc6a8734be0600f9443377697419ee7ed4247f2d36",
           "modification_status": "notice-only"
         },
