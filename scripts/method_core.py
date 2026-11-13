@@ -75,7 +75,8 @@ def check(root, *, allow_transaction=False):
         path = contained(root,item['path'])
         if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest() != item['sha256']:
             raise ValueError(f'core drift: {item["path"]}')
-        if path.stat().st_mode & 0o777 != int(item['mode'],8) & 0o777:
+        # Git records only the executable bit; group/other bits follow the installing umask.
+        if bool(path.stat().st_mode & 0o100) != (item['mode'] == '100755'):
             raise ValueError(f'core mode drift: {item["path"]}')
     return lock
 
