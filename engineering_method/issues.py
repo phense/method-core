@@ -31,17 +31,44 @@ ISSUE_MARKER_PATTERN = re.compile(
     r"<!-- engineering-method:issue (?P<payload>\{[^\n]*\}) -->"
 )
 ISSUE_PREFIX = "<!-- engineering-method:issue "
-CONTROLLED_LABELS: tuple[tuple[str, str, str], ...] = (
-    ("engineering-method", "0B7285", "Managed by Peter's Engineering Method."),
-    ("priority:p0", "B60205", "Blocking or urgent work."),
-    ("priority:p1", "D93F0B", "Next planned work."),
-    ("priority:p2", "FBCA04", "Planned work."),
-    ("priority:p3", "C5DEF5", "Later improvement."),
-    ("status:open", "1D76DB", "Open Engineering Method work."),
-    ("status:in-progress", "5319E7", "Engineering Method work in progress."),
-    ("status:blocked", "B60205", "Engineering Method work currently blocked."),
-)
-CONTROLLED_LABEL_NAMES = frozenset(label[0] for label in CONTROLLED_LABELS)
+LEGACY_METHOD_LABEL = "engineering-method"
+_METHOD_NAME = re.compile(r"[a-z][a-z0-9-]{0,48}")
+
+
+def method_label(root: Path | None = None) -> str:
+    """Name of the method that bundles this package, read from its method.json.
+
+    Core is copied into each method; the label on managed Issues must name the
+    method that owns the backlog, not the one this package is named after.
+    Without a readable identity (Core's own checkout) the historical name is kept.
+    """
+    root = Path(__file__).resolve().parents[1] if root is None else root
+    try:
+        name = json.loads((root / "method.json").read_text(encoding="utf-8"))["name"]
+    except (OSError, ValueError, KeyError, TypeError):
+        return LEGACY_METHOD_LABEL
+    return name if isinstance(name, str) and _METHOD_NAME.fullmatch(name) else LEGACY_METHOD_LABEL
+
+
+def controlled_labels(label: str) -> tuple[tuple[str, str, str], ...]:
+    display = label.replace("-", " ").title()
+    return (
+        (label, "0B7285", f"Managed by Peter's {display}."),
+        ("priority:p0", "B60205", "Blocking or urgent work."),
+        ("priority:p1", "D93F0B", "Next planned work."),
+        ("priority:p2", "FBCA04", "Planned work."),
+        ("priority:p3", "C5DEF5", "Later improvement."),
+        ("status:open", "1D76DB", f"Open {display} work."),
+        ("status:in-progress", "5319E7", f"{display} work in progress."),
+        ("status:blocked", "B60205", f"{display} work currently blocked."),
+    )
+
+
+METHOD_LABEL = method_label()
+CONTROLLED_LABELS: tuple[tuple[str, str, str], ...] = controlled_labels(METHOD_LABEL)
+# The historical label stays controlled so that an Issue created before the
+# method had its own label loses it on the next synchronization.
+CONTROLLED_LABEL_NAMES = frozenset(label[0] for label in CONTROLLED_LABELS) | {LEGACY_METHOD_LABEL}
 QUEUE_SCHEMA_VERSION = 1
 QUEUE_KINDS = frozenset({"add", "status", "priority", "dependencies"})
 
@@ -147,7 +174,7 @@ def _remote_map(
 
 
 def _labels(item: BacklogItem) -> tuple[str, ...]:
-    labels = ["engineering-method", f"priority:{item.priority.value.lower()}"]
+    labels = [METHOD_LABEL, f"priority:{item.priority.value.lower()}"]
     if item.status is not TaskStatus.COMPLETE:
         labels.append(f"status:{item.status.value.replace('_', '-')}")
     return tuple(labels)
