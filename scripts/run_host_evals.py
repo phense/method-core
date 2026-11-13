@@ -148,7 +148,8 @@ def native_failure_diagnostics(stdout, stderr):
 
 def execute(command, cwd, env, timeout):
     try:
-        process = subprocess.Popen(command, cwd=cwd, env=env, stdout=subprocess.PIPE,
+        # A host that inherits an open stdin waits for more input and never starts the turn.
+        process = subprocess.Popen(command, cwd=cwd, env=env, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE, text=True, start_new_session=True)
     except FileNotFoundError as exc:
         raise EvalFailure("missing_command") from exc
