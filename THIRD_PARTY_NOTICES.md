@@ -8,6 +8,8 @@ Copyright (c) 2026 Peter Hense. Original code is MIT licensed. Core preserves ad
 
 ## Superpowers
 
+Source ID: `superpowers`
+
 Repository: https://github.com/obra/superpowers.git
 
 Revision: `b36e0829c6d0140e93cfef2ca599b1b07d4a7797`
@@ -56,6 +58,8 @@ SOFTWARE.
 
 ## sre-runbook-agent-skills
 
+Source ID: `sre-runbook-agent-skills`
+
 Repository: https://github.com/medzin/sre-runbook-agent-skills.git
 
 Revision: `44ab3d87293788036013098868563f82a3369b81`
@@ -97,6 +101,8 @@ SOFTWARE.
 ```
 
 ## han
+
+Source ID: `han`
 
 Repository: https://github.com/testdouble/han.git
 
