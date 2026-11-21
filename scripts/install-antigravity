@@ -1,0 +1,295 @@
+#!/usr/bin/env python3
+"""Install an owned Antigravity plugin copy without modifying user configuration."""
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path, PurePosixPath
+import re
+import shutil
+import sys
+import tempfile
+
+MARKER = ".method-antigravity-install.json"
+EXCLUDED = {
+    ".git",
+    ".engineering-method",
+    ".superpowers",
+    ".worktrees",
+    ".venv",
+    "__pycache__",
+    ".pytest_cache",
+    ".cache",
+    ".codex",
+    ".claude",
+    "dist",
+    "build",
+    "htmlcov",
+    "test-results",
+    "eval-results",
+    "release-evidence",
+}
+EXCLUDED_FILES = {".DS_Store", ".coverage", ".method-core-sync.lock", MARKER}
+EXCLUDED_SUFFIXES = {".pyc", ".pyo", ".log"}
+
+
+def require_plain_parents(path: Path) -> None:
+    for parent in reversed((path, *path.parents)):
+        if parent.is_symlink():
+            raise ValueError(f"refusing symlinked destination directory: {parent}")
+        if parent.exists() and not parent.is_dir():
+            raise ValueError(f"destination parent is not a directory: {parent}")
+
+
+def is_excluded(relative: PurePosixPath) -> bool:
+    if EXCLUDED.intersection(relative.parts):
+        return True
+    if any(part.startswith(".method-core-") for part in relative.parts):
+        return True
+    if relative.name in EXCLUDED_FILES or relative.suffix in EXCLUDED_SUFFIXES:
+        return True
+    return False
+
+
+def collect_source_files(source: Path) -> dict[str, tuple[bytes, int]]:
+    files: dict[str, tuple[bytes, int]] = {}
+    for root_dir, dirnames, filenames in os.walk(source, followlinks=False):
+        current = Path(root_dir)
+        rel_dir = current.relative_to(source)
+        kept_dirs = []
+        for dirname in sorted(dirnames):
+            rel = PurePosixPath(*(rel_dir.parts + (dirname,)))
+            if is_excluded(rel):
+                continue
+            candidate = current / dirname
+            if candidate.is_symlink():
+                raise ValueError(f"refusing symlinked source directory: {rel.as_posix()}")
+            kept_dirs.append(dirname)
+        dirnames[:] = kept_dirs
+        for filename in sorted(filenames):
+            rel = PurePosixPath(*(rel_dir.parts + (filename,)))
+            if is_excluded(rel):
+                continue
+            candidate = current / filename
+            if candidate.is_symlink():
+                raise ValueError(f"refusing symlinked source file: {rel.as_posix()}")
+            if not candidate.is_file():
+                continue
+            data = candidate.read_bytes()
+            mode = 0o755 if bool(candidate.stat().st_mode & 0o100) else 0o644
+            files[rel.as_posix()] = (data, mode)
+    return files
+
+
+def read_identity(source: Path, explicit_name: str | None = None) -> tuple[str, str]:
+    if explicit_name is not None:
+        identity = explicit_name
+        version = ""
+    else:
+        manifest_path = source / ".antigravity-plugin/plugin.json"
+        if manifest_path.is_file():
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            identity = manifest.get("name")
+            version = str(manifest.get("version", ""))
+        else:
+            codex_path = source / ".codex-plugin/plugin.json"
+            if codex_path.is_file():
+                manifest = json.loads(codex_path.read_text(encoding="utf-8"))
+                identity = manifest.get("name")
+                version = str(manifest.get("version", ""))
+            else:
+                identity = "engineering-method"
+                version = ""
+    if not isinstance(identity, str) or not re.fullmatch(r"[a-z][a-z0-9-]*", identity):
+        raise ValueError("invalid method identity")
+    return identity, version
+
+
+def build_marker(identity: str, version: str, source: Path, files: dict[str, tuple[bytes, int]]) -> bytes:
+    payload = {
+        "schema_version": 1,
+        "managed_by": "install-antigravity",
+        "name": identity,
+        "version": version,
+        "source": str(source),
+        "files": {
+            rel: {
+                "sha256": hashlib.sha256(data).hexdigest(),
+                "mode": "100755" if mode == 0o755 else "100644",
+            }
+            for rel, (data, mode) in sorted(files.items())
+        },
+    }
+    return (json.dumps(payload, indent=2, sort_keys=True) + "\n").encode("utf-8")
+
+
+def verify_owned_destination(destination: Path, expected_name: str) -> dict:
+    if destination.is_symlink():
+        raise ValueError(f"refusing symlinked plugin directory: {destination}")
+    if not destination.is_dir():
+        raise ValueError(f"refusing non-directory plugin target: {destination}")
+    marker_path = destination / MARKER
+    if marker_path.is_symlink() or not marker_path.is_file():
+        raise ValueError(f"refusing foreign or unmanaged plugin directory: {destination}")
+    try:
+        marker = json.loads(marker_path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise ValueError(f"refusing unreadable ownership marker in: {destination}") from error
+    if (
+        not isinstance(marker, dict)
+        or marker.get("schema_version") != 1
+        or marker.get("managed_by") != "install-antigravity"
+        or marker.get("name") != expected_name
+        or not isinstance(marker.get("files"), dict)
+    ):
+        raise ValueError(f"refusing foreign or modified plugin directory: {destination}")
+    recorded = marker["files"]
+    actual_paths: set[str] = set()
+    for root_dir, dirnames, filenames in os.walk(destination, followlinks=False):
+        current = Path(root_dir)
+        rel_dir = current.relative_to(destination)
+        for dirname in dirnames:
+            if (current / dirname).is_symlink():
+                raise ValueError(f"refusing modified plugin directory (symlink): {destination}")
+        for filename in filenames:
+            rel = PurePosixPath(*(rel_dir.parts + (filename,))).as_posix()
+            if rel == MARKER:
+                continue
+            path = current / filename
+            if path.is_symlink() or not path.is_file():
+                raise ValueError(f"refusing modified plugin directory: {destination}")
+            actual_paths.add(rel)
+    if actual_paths != set(recorded):
+        raise ValueError(f"refusing modified plugin directory: {destination}")
+    for rel, meta in recorded.items():
+        if not isinstance(meta, dict):
+            raise ValueError(f"refusing malformed ownership marker in: {destination}")
+        path = destination / rel
+        if hashlib.sha256(path.read_bytes()).hexdigest() != meta.get("sha256"):
+            raise ValueError(f"refusing modified plugin directory: {destination}")
+        expected_exec = meta.get("mode") == "100755"
+        if bool(path.stat().st_mode & 0o100) != expected_exec:
+            raise ValueError(f"refusing modified plugin directory: {destination}")
+    return marker
+
+
+def stage_copy(plugins_dir: Path, files: dict[str, tuple[bytes, int]], marker_bytes: bytes) -> Path:
+    stage = Path(tempfile.mkdtemp(prefix=".method-antigravity-stage-", dir=plugins_dir))
+    try:
+        for rel, (data, mode) in sorted(files.items()):
+            target = stage / rel
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(data)
+            target.chmod(mode)
+        marker_path = stage / MARKER
+        marker_path.write_bytes(marker_bytes)
+        marker_path.chmod(0o644)
+    except BaseException:
+        shutil.rmtree(stage, ignore_errors=True)
+        raise
+    return stage
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--source-root",
+        type=Path,
+        default=Path(__file__).resolve().parents[1],
+        help="Checkout or extracted package to copy into the Antigravity plugins directory.",
+    )
+    parser.add_argument(
+        "--config-dir",
+        type=Path,
+        default=Path.home() / ".gemini/config",
+        help="Antigravity configuration directory (default: ~/.gemini/config).",
+    )
+    parser.add_argument(
+        "--name",
+        help="Plugin identity for --uninstall when the original source checkout no longer exists.",
+    )
+    parser.add_argument("--check", action="store_true", help="Describe the change without writing.")
+    parser.add_argument(
+        "--uninstall",
+        action="store_true",
+        help="Remove only an unmodified copy owned by this installer.",
+    )
+    args = parser.parse_args(argv)
+    try:
+        if args.name is not None and not args.uninstall:
+            raise ValueError("--name is only valid with --uninstall")
+        source = args.source_root.expanduser().resolve()
+        # Keep lexical ancestors visible until after the symlink check.
+        config = Path(os.path.abspath(args.config_dir.expanduser()))
+        identity, version = read_identity(source, explicit_name=args.name)
+        plugins_dir = config / "plugins"
+        destination = plugins_dir / identity
+        require_plain_parents(plugins_dir)
+        if destination.is_symlink():
+            raise ValueError(f"refusing symlinked plugin directory: {destination}")
+        exists = destination.exists()
+        existing_marker = verify_owned_destination(destination, identity) if exists else None
+
+        if args.uninstall:
+            if not exists:
+                print("Not installed.")
+                return 0
+            if args.check:
+                print(f"Would remove {destination}")
+                return 0
+            retired = Path(tempfile.mkdtemp(prefix=".method-antigravity-remove-", dir=plugins_dir))
+            retired.rmdir()
+            os.rename(destination, retired)
+            shutil.rmtree(retired)
+            print(f"Removed {destination}")
+            return 0
+
+        for required in (".antigravity-plugin/plugin.json", "shared/platform/antigravity.md"):
+            if not (source / required).is_file():
+                raise ValueError(f"missing package resource: {source / required}")
+        if not (source / "skills").is_dir():
+            raise ValueError(f"missing skill directory: {source / 'skills'}")
+
+        files = collect_source_files(source)
+        marker_bytes = build_marker(identity, version, source, files)
+        desired_marker = json.loads(marker_bytes.decode("utf-8"))
+
+        if existing_marker is not None and existing_marker.get("files") == desired_marker["files"] and existing_marker.get("version") == desired_marker["version"]:
+            print(f"Already installed: {destination}")
+            return 0
+
+        if args.check:
+            verb = "Would update" if exists else "Would install"
+            print(f"{verb}: {destination}\nSource: {source}\nFiles: {len(files)}")
+            return 0
+
+        plugins_dir.mkdir(parents=True, exist_ok=True)
+        require_plain_parents(plugins_dir)
+        stage = stage_copy(plugins_dir, files, marker_bytes)
+        backup: Path | None = None
+        try:
+            if exists:
+                backup = Path(tempfile.mkdtemp(prefix=".method-antigravity-backup-", dir=plugins_dir))
+                backup.rmdir()
+                os.rename(destination, backup)
+            os.rename(stage, destination)
+        except BaseException:
+            if backup is not None and backup.exists() and not destination.exists():
+                os.rename(backup, destination)
+            shutil.rmtree(stage, ignore_errors=True)
+            raise
+        if backup is not None and backup.exists():
+            shutil.rmtree(backup)
+
+        verb = "Updated" if exists else "Installed"
+        print(f"{verb}: {destination}\nSource: {source}\nFiles: {len(files)}")
+        return 0
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        print(f"install-antigravity: {error}", file=sys.stderr)
+        return 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

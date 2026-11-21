@@ -122,5 +122,6 @@ method owns lifecycle selection and its method-specific policies. Read the
 consumer's `shared/policies/lifecycle-selection.md` when present. For shared
 support choose the invoking plugin's namespace; do not run duplicate copies or
 start another method merely because it is installed. Core support does not
-require either method's optional skills. Gemini-specific behavior is deferred
-until a separate adapter has been verified.
+require either method's optional skills. Antigravity uses the separate
+`shared/platform/antigravity.md` adapter; standalone Gemini CLI remains
+separate and unverified.

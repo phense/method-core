@@ -11,13 +11,13 @@ Method Core is the shared source for [Engineering Method](https://github.com/phe
 
 | Core owns | Consumer owns |
 |---|---|
-| Claude, Codex and OpenCode adapters | Its lifecycle selection, handoff graph and domain-specific roles |
+| Claude, Codex, OpenCode and Antigravity adapters | Its lifecycle selection, handoff graph and domain-specific roles |
 | Backlog and continuity runtime | Its specifications, documents, task state and acceptance decisions |
 | Verification, review, worktree and delegation support | Engineering lifecycles or writing/didactic skills |
 | Generic playbook authoring, review, policy and templates | Why a particular operation needs a playbook and its rehearsal requirements |
-| Export integrity, packaging and OpenCode installation tools | Plugin identity, marketplace, releases and method-specific tests |
+| Export integrity, packaging and OpenCode/Antigravity installation tools | Plugin identity, marketplace, releases and method-specific tests |
 
-Gemini has no verified adapter yet. Installing a method into another client does not prove adapter support.
+Standalone Gemini CLI extensions remain separate and unverified. Installing a method into another client does not prove adapter support.
 
 ## Terms
 
