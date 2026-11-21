@@ -13,7 +13,14 @@ ROOT = Path(__file__).resolve().parents[1]
 class PlatformAdapterTests(unittest.TestCase):
     def test_neutral_resources_reject_host_syntax_and_models(self):
         for tree in ("skills", "templates", "shared/policies"):
-            for token in ("collaboration.spawn_agent", "gpt-6-astra", "claude-fable-5", "`Agent`"):
+            for token in (
+                "collaboration.spawn_agent",
+                "gpt-6-astra",
+                "claude-fable-5",
+                "`Agent`",
+                "gemini-4-neon-high",
+                "invoke_subagent",
+            ):
                 with self.subTest(tree=tree, token=token), tempfile.TemporaryDirectory() as directory:
                     root = Path(directory)
                     path = root / tree / "example.md"
@@ -30,7 +37,7 @@ class PlatformAdapterTests(unittest.TestCase):
 
     def test_both_adapters_map_every_required_operation(self):
         operations = {"dispatch", "follow_up", "status", "wait", "cancel", "isolation", "model_selection", "sequential_fallback"}
-        for host in ("codex", "claude"):
+        for host in ("codex", "claude", "antigravity"):
             with self.subTest(host=host):
                 text = (ROOT / f"shared/platform/{host}.md").read_text()
                 data = json.loads(re.search(r"```json\n(.*?)\n```", text, re.S).group(1))

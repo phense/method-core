@@ -12,6 +12,25 @@ from urllib.parse import unquote
 
 
 COMMON_IDENTITY_FIELDS = ("name", "version", "description", "author", "license", "keywords")
+ANTIGRAVITY_ALLOWED_FIELDS = frozenset(
+    {
+        "$schema",
+        "name",
+        "displayName",
+        "description",
+        "version",
+        "disabled",
+        "logo",
+        "suggestedPrompts",
+        "skills",
+        "author",
+        "homepage",
+        "repository",
+        "license",
+        "keywords",
+        "extensions",
+    }
+)
 COMMON_REQUIRED_FILES = (
     "README.md",
     "LICENSE",
@@ -180,6 +199,47 @@ def _validate_codex_manifest(
             continue
         if not component_path.is_dir():
             errors.append(_error(relative, f"{field} path {_relative(root, component_path)} is required"))
+
+
+def _validate_antigravity_manifest(
+    root: Path, relative: str, manifest: dict[str, object], errors: list[str]
+) -> None:
+    unknown = sorted(set(manifest) - ANTIGRAVITY_ALLOWED_FIELDS)
+    for field in unknown:
+        errors.append(_error(relative, f"{field} is not permitted by the Antigravity manifest schema"))
+    name = manifest.get("name")
+    if isinstance(name, str) and name and not SKILL_NAME.fullmatch(name):
+        errors.append(_error(relative, "name must be lowercase hyphen-case"))
+    display_name = manifest.get("displayName")
+    if "displayName" not in manifest:
+        errors.append(_error(relative, "displayName is required"))
+    elif not isinstance(display_name, str) or not display_name.strip():
+        errors.append(_error(relative, "displayName must be a non-empty string"))
+    if "suggestedPrompts" in manifest:
+        prompts = manifest["suggestedPrompts"]
+        if (
+            not isinstance(prompts, list)
+            or not prompts
+            or len(prompts) > 3
+            or not all(isinstance(item, str) and item.strip() for item in prompts)
+        ):
+            errors.append(_error(relative, "suggestedPrompts must be 1 to 3 non-empty strings"))
+    for field in ("homepage", "repository"):
+        if field in manifest and (not isinstance(manifest[field], str) or not manifest[field].strip()):
+            errors.append(_error(relative, f"{field} must be a non-empty string"))
+    if "logo" in manifest:
+        logo = manifest["logo"]
+        if not isinstance(logo, str) or not logo.strip():
+            errors.append(_error(relative, "logo must be a non-empty string"))
+        else:
+            logo_path = (root / logo).resolve()
+            try:
+                logo_path.relative_to(root.resolve())
+            except ValueError:
+                errors.append(_error(relative, "logo must stay within the repository"))
+            else:
+                if not logo_path.is_file():
+                    errors.append(_error(relative, f"logo path {_relative(root, logo_path)} is required"))
 
 
 def _parse_supported_frontmatter_scalar(field: str, value: str) -> str | None:
@@ -425,9 +485,10 @@ def _validate_unfinished_markers(root: Path, errors: list[str]) -> None:
 
 def _validate_platform_boundary(root: Path, errors: list[str]) -> None:
     host_syntax = re.compile(
-        r"\bgpt-\d[\w.-]*|\bclaude-(?:fable|opus|sonnet|haiku)[\w.-]*|"
+        r"\bgpt-\d[\w.-]*|\bclaude-(?:fable|opus|sonnet|haiku)[\w.-]*|\bgemini-\d[\w.-]*|"
         r"\bcollaboration\.[a-z_]+|\b(?:spawn_agent|followup_task|send_message|wait_agent|"
-        r"interrupt_agent|list_agents)\b|`Agent`|\bCLAUDE_PLUGIN_ROOT\b"
+        r"interrupt_agent|list_agents|invoke_subagent|define_subagent|manage_subagents)\b|"
+        r"`Agent`|\bCLAUDE_PLUGIN_ROOT\b|\bPLUGIN_ROOT\b|\bPLUGIN_DATA\b"
     )
     for tree in ("skills", "templates", "shared/policies"):
         for path in sorted((root / tree).rglob("*")):
@@ -527,8 +588,10 @@ def validate_repository(root: Path) -> list[str]:
         return sorted(errors)
     codex_relative = ".codex-plugin/plugin.json"
     claude_relative = ".claude-plugin/plugin.json"
+    antigravity_relative = ".antigravity-plugin/plugin.json"
     codex = _load_json(root, codex_relative, errors)
     claude = _load_json(root, claude_relative, errors)
+    antigravity = _load_json(root, antigravity_relative, errors)
     for relative in COMMON_REQUIRED_FILES:
         if not (root / relative).is_file():
             errors.append(_error(relative, "file is required"))
@@ -540,18 +603,26 @@ def validate_repository(root: Path) -> list[str]:
         _validate_codex_manifest(root, codex_relative, codex, errors)
     if claude is not None:
         _validate_identity(claude_relative, claude, errors)
-    if codex is not None and claude is not None:
+    if antigravity is not None:
+        _validate_identity(antigravity_relative, antigravity, errors)
+        _validate_antigravity_manifest(root, antigravity_relative, antigravity, errors)
+    for secondary_relative, secondary in (
+        (claude_relative, claude),
+        (antigravity_relative, antigravity),
+    ):
+        if codex is None or secondary is None:
+            continue
         for field in (field for field in COMMON_IDENTITY_FIELDS if field != "author"):
-            if field in codex and field in claude and codex[field] != claude[field]:
-                errors.append(_error(claude_relative, f"{field} must match .codex-plugin/plugin.json"))
+            if field in codex and field in secondary and codex[field] != secondary[field]:
+                errors.append(_error(secondary_relative, f"{field} must match .codex-plugin/plugin.json"))
         codex_author = codex.get("author")
-        claude_author = claude.get("author")
+        secondary_author = secondary.get("author")
         if (
             isinstance(codex_author, dict)
-            and isinstance(claude_author, dict)
-            and codex_author.get("name") != claude_author.get("name")
+            and isinstance(secondary_author, dict)
+            and codex_author.get("name") != secondary_author.get("name")
         ):
-            errors.append(_error(claude_relative, "author.name must match .codex-plugin/plugin.json"))
+            errors.append(_error(secondary_relative, "author.name must match .codex-plugin/plugin.json"))
     _validate_skill_frontmatter(root, errors)
     _validate_project_backlog_contract(root, errors)
     _validate_skill_resources(root, errors)

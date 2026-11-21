@@ -81,6 +81,13 @@ def assert_installed(payload: str, host: str, name: str = "engineering-method") 
             and isinstance(entry.get("installPath"), str) and Path(entry["installPath"]).is_absolute()
             and (Path(entry["installPath"]) / ".claude-plugin/plugin.json").is_file()
             for entry in parsed)
+    elif host == "Antigravity":
+        valid = isinstance(parsed, list) and any(
+            isinstance(entry, dict) and entry.get("name") == name and entry.get("enabled") is True
+            and isinstance(entry.get("path"), str) and Path(entry["path"]).is_absolute()
+            and (Path(entry["path"]) / ".antigravity-plugin/plugin.json").is_file()
+            and isinstance(entry.get("skills"), list) and len(entry["skills"]) > 0
+            for entry in parsed)
     else:
         raise ValueError("unknown native host inventory")
     if not valid:
@@ -109,6 +116,9 @@ def clean_install(package: Path, timeout: int = 60) -> dict:
         run(["codex", "plugin", "marketplace", "add", str(root), "--json"])
         run(["codex", "plugin", "add", identity, "--json"])
         assert_installed(run(["codex", "plugin", "list", "--marketplace", name, "--json"]), "Codex", name)
+        run(["agy", "plugin", "validate", "--strict", str(root)])
+        run(["agy", "plugin", "install", str(root)])
+        assert_installed(run(["agy", "plugin", "list", "--json"]), "Antigravity", name)
         return {"status": "passed", "package_sha256": hashlib.sha256(package.read_bytes()).hexdigest(),
                 "commands": commands, "credentials_used": False, "live_model_requests": False}
 

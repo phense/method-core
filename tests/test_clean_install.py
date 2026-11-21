@@ -19,10 +19,20 @@ class CleanInstallTests(unittest.TestCase):
             {"installed": [{"pluginId": "engineering-method@engineering-method", "installed": False, "enabled": True}]},
             [{"id": "engineering-method@engineering-method", "enabled": True}],
         ]
-        for host in ("Codex", "Claude"):
+        for host in ("Codex", "Claude", "Antigravity"):
             for payload in invalid:
                 with self.subTest(host=host, payload=payload), self.assertRaises(ValueError):
                     assert_installed(json.dumps(payload), host)
+
+    def test_antigravity_inventory_accepts_installed_plugin_with_manifest_and_skills(self):
+        with tempfile.TemporaryDirectory() as directory:
+            plugin = Path(directory).resolve() / "engineering-method"
+            (plugin / ".antigravity-plugin").mkdir(parents=True)
+            (plugin / ".antigravity-plugin/plugin.json").write_text('{"name": "engineering-method"}\n')
+            payload = [{"name": "engineering-method", "enabled": True, "path": str(plugin), "skills": ["project-backlog"]}]
+            assert_installed(json.dumps(payload), "Antigravity", "engineering-method")
+            with self.assertRaises(ValueError):
+                assert_installed(json.dumps([{**payload[0], "skills": []}]), "Antigravity", "engineering-method")
 
     def test_native_timeout_terminates_grandchild_before_return(self):
         with tempfile.TemporaryDirectory() as directory:
